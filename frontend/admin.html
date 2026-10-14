@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Operations Console | Smart City Parking & Traffic System</title>
+
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Project Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Container for Dynamically Injected Shared Navbar (js/navbar.js) -->
+    <div id="navbarContainer"></div>
+
+    <!-- =======================================================================
+         MAIN ADMIN CONSOLE CONTENT
+         ======================================================================= -->
+    <main class="container my-4 my-md-5">
+
+        <!-- Page Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 small">
+                        <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Admin Management</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-1">
+                    <i class="bi bi-shield-shaded text-primary me-2"></i>Municipal Traffic Control Console
+                </h1>
+                <p class="text-muted mb-0 small">
+                    Adjudicate automated camera violations, issue official e-challan penalties, and review citizen dispute appeals.
+                </p>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <span id="adminStatsBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
+                    Admin Session Active
+                </span>
+                <button id="refreshAdminBtn" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-sm" title="Reload admin datasets">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Feedback Alert Banner -->
+        <div id="adminActionAlert" class="alert alert-success alert-dismissible fade show d-none shadow-sm" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+                <div>
+                    <h6 class="alert-heading fw-bold mb-0" id="adminActionAlertTitle">Action Processed</h6>
+                    <p class="mb-0 small" id="adminActionAlertMessage">Record successfully updated.</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Global Error Alert -->
+        <div id="adminErrorMessage" class="alert alert-danger d-none shadow-sm" role="alert"></div>
+
+        <!-- =======================================================================
+             BOOTSTRAP NAV-TABS: "Violations" & "Appeals"
+             ======================================================================= -->
+        <div class="card card-custom shadow-sm border-0">
+            <!-- Nav Tabs Header -->
+            <div class="card-header bg-white pt-3 pb-0 border-bottom">
+                <ul class="nav nav-tabs card-header-tabs" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-semibold d-flex align-items-center gap-2" 
+                                id="violations-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#violationsPane" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="violationsPane" 
+                                aria-selected="true">
+                            <i class="bi bi-camera-video-fill text-danger"></i>
+                            <span>Detected Violations</span>
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 ms-1" id="violationsCountBadge">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold d-flex align-items-center gap-2" 
+                                id="appeals-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#appealsPane" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="appealsPane" 
+                                aria-selected="false">
+                            <i class="bi bi-gavel text-warning"></i>
+                            <span>Dispute Appeals</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1 ms-1" id="appealsCountBadge">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold d-flex align-items-center gap-2" 
+                                id="dashboard-tab" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#dashboardPane" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="dashboardPane" 
+                                aria-selected="false">
+                            <i class="bi bi-speedometer2 text-primary"></i>
+                            <span>Dashboard</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="adminTabsContent">
+
+                <!-- ===================================================================
+                     TAB 1: VIOLATIONS PANE
+                     =================================================================== -->
+                <div class="tab-pane fade show active p-0" id="violationsPane" role="tabpanel" aria-labelledby="violations-tab">
+                    
+                    <!-- Loading Spinner for Violations -->
+                    <div id="violationsLoadingSpinner" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status" style="width: 2.2rem; height: 2.2rem;"></div>
+                        <p class="text-muted mt-2 small">Loading camera violation logs...</p>
+                    </div>
+
+                    <!-- Responsive Table -->
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover align-middle mb-0" id="violationsTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col" style="width: 100px;">ID</th>
+                                    <th scope="col" style="width: 130px;">Vehicle Plate</th>
+                                    <th scope="col" style="width: 130px;">Camera ID</th>
+                                    <th scope="col">Rule Broken</th>
+                                    <th scope="col" style="width: 160px;">Incident Time</th>
+                                    <th scope="col" style="width: 100px;" class="text-center">Snapshot</th>
+                                    <th scope="col" style="width: 120px;" class="text-center">Status</th>
+                                    <th scope="col" style="width: 140px;" class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="violationsTableBody">
+                                <!-- Populated by js/admin.js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer bg-light py-2 small text-muted d-flex justify-content-between">
+                        <span>DBMS Entity: <code>VIOLATIONS(violation_id, plate_no, camera_id, rule_broken, violation_time, has_ticket)</code></span>
+                        <span>Automated IoT Camera Surveillance Feed</span>
+                    </div>
+                </div>
+
+                <!-- ===================================================================
+                     TAB 2: APPEALS PANE
+                     =================================================================== -->
+                <div class="tab-pane fade p-0" id="appealsPane" role="tabpanel" aria-labelledby="appeals-tab">
+                    
+                    <!-- Loading Spinner for Appeals -->
+                    <div id="appealsLoadingSpinner" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary" role="status" style="width: 2.2rem; height: 2.2rem;"></div>
+                        <p class="text-muted mt-2 small">Loading citizen dispute appeals...</p>
+                    </div>
+
+                    <!-- Responsive Table -->
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover align-middle mb-0" id="appealsTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col" style="width: 110px;">Appeal ID</th>
+                                    <th scope="col" style="width: 110px;">Ticket ID</th>
+                                    <th scope="col" style="width: 130px;">Vehicle Plate</th>
+                                    <th scope="col">Contested Justification / Reason</th>
+                                    <th scope="col" style="width: 130px;">Filed Date</th>
+                                    <th scope="col" style="width: 120px;" class="text-center">Decision</th>
+                                    <th scope="col" style="width: 180px;" class="text-center">Adjudication</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appealsTableBody">
+                                <!-- Populated by js/admin.js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer bg-light py-2 small text-muted d-flex justify-content-between">
+                        <span>DBMS Entity: <code>APPEALS(appeal_id, ticket_id, plate_no, reason_text, appeal_date, admin_decision)</code></span>
+                        <span>Adjudication States: <code>Pending | Approved | Rejected</code></span>
+                    </div>
+                </div>
+
+                <!-- ===================================================================
+                     TAB 3: DASHBOARD PANE (Step 8)
+                     =================================================================== -->
+                <div class="tab-pane fade p-3 p-md-4" id="dashboardPane" role="tabpanel" aria-labelledby="dashboard-tab">
+
+                    <!-- Loading Spinner for Dashboard -->
+                    <div id="dashboardLoadingSpinner" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary" role="status" style="width: 2.2rem; height: 2.2rem;"></div>
+                        <p class="text-muted mt-2 small">Loading municipal analytics and KPIs...</p>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="dashboardErrorMessage" class="alert alert-danger d-none shadow-sm small" role="alert"></div>
+
+                    <!-- 4 Bootstrap Summary Cards -->
+                    <div class="row g-3 mb-4" id="dashboardKpiRow">
+                        <!-- Card 1: Unpaid Tickets (Count) -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm border-start border-danger border-4 bg-light-subtle">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="text-muted small fw-semibold text-uppercase tracking-wider">Unpaid Tickets</span>
+                                            <h3 class="fw-bold mb-0 text-danger mt-1" id="statUnpaidTickets">--</h3>
+                                            <small class="text-muted">Awaiting fine payment</small>
+                                        </div>
+                                        <div class="p-3 bg-danger-subtle rounded-circle text-danger">
+                                            <i class="bi bi-receipt-cutoff fs-4"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Unpaid Amount (₹ Total) -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm border-start border-warning border-4 bg-light-subtle">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="text-muted small fw-semibold text-uppercase tracking-wider">Unpaid Total</span>
+                                            <h3 class="fw-bold mb-0 text-dark mt-1" id="statUnpaidTotal">₹--</h3>
+                                            <small class="text-muted">Outstanding receivables</small>
+                                        </div>
+                                        <div class="p-3 bg-warning-subtle rounded-circle text-warning-emphasis">
+                                            <i class="bi bi-currency-rupee fs-4"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Paid Tickets -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm border-start border-success border-4 bg-light-subtle">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="text-muted small fw-semibold text-uppercase tracking-wider">Paid Tickets</span>
+                                            <h3 class="fw-bold mb-0 text-success mt-1" id="statPaidTickets">--</h3>
+                                            <small class="text-muted">Settled compliance fines</small>
+                                        </div>
+                                        <div class="p-3 bg-success-subtle rounded-circle text-success">
+                                            <i class="bi bi-check-circle-fill fs-4"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Pending Appeals -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm border-start border-primary border-4 bg-light-subtle">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="text-muted small fw-semibold text-uppercase tracking-wider">Pending Appeals</span>
+                                            <h3 class="fw-bold mb-0 text-primary mt-1" id="statPendingAppeals">--</h3>
+                                            <small class="text-muted">Awaiting admin decision</small>
+                                        </div>
+                                        <div class="p-3 bg-primary-subtle rounded-circle text-primary">
+                                            <i class="bi bi-gavel fs-4"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3 Charts Section (Chart.js) -->
+                    <div class="row g-4" id="dashboardChartsRow">
+                        <!-- Chart 1: Bar Chart - Revenue per Zone -->
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                                    <h6 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-bar-chart-fill text-primary"></i>
+                                        <span>Parking Revenue by Zone</span>
+                                    </h6>
+                                    <span class="badge bg-primary-subtle text-primary">Bar Chart</span>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div style="position: relative; height: 300px; width: 100%;">
+                                        <canvas id="revenueZoneChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light py-2 small text-muted">
+                                    <span>Aggregated Total Parking Tariff Collections (₹)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Stacked Bar Chart - Slot Status per Zone -->
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                                    <h6 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-layers-fill text-info"></i>
+                                        <span>Slot Occupancy by Zone (Stacked)</span>
+                                    </h6>
+                                    <span class="badge bg-info-subtle text-info">Stacked Bar</span>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div style="position: relative; height: 300px; width: 100%;">
+                                        <canvas id="occupancyZoneChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light py-2 small text-muted d-flex justify-content-between align-items-center">
+                                    <span>Colors matching slot view: Free (Green), Occupied (Red), Reserved (Yellow), Maint (Grey)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart 3: Pie Chart - Violations by Rule -->
+                        <div class="col-12 col-lg-8 mx-auto">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                                    <h6 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-pie-chart-fill text-danger"></i>
+                                        <span>Traffic Violations by Infraction Rule</span>
+                                    </h6>
+                                    <span class="badge bg-danger-subtle text-danger">Pie Chart</span>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-12 col-md-7 text-center">
+                                            <div style="position: relative; height: 280px; width: 100%;">
+                                                <canvas id="violationsRuleChart"></canvas>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-5 mt-3 mt-md-0" id="violationsRuleLegend">
+                                            <h6 class="small text-muted fw-bold text-uppercase mb-2">Infraction Breakdown</h6>
+                                            <ul class="list-group list-group-flush small" id="violationsRuleList">
+                                                <!-- Populated by js/admin.js -->
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light py-2 small text-muted">
+                                    <span>Categorized from automated IoT camera surveillance detections</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard DBMS Analytics Footer Note -->
+                    <div class="card-footer bg-light py-2 small text-muted d-flex justify-content-between mt-4 rounded">
+                        <span>DBMS Analytics: <code>GROUP BY zone_id, rule_broken, ticket_status</code></span>
+                        <span>Visualization: <code>Chart.js v4</code> &bull; Central API Client</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- =======================================================================
+             ISSUE TICKET MODAL (Step 5)
+             Viva Explanation:
+             Opens when an admin clicks "Issue Ticket" on a violation where `has_ticket === false`.
+             Includes:
+             - Fine Amount (number, required, > 0)
+             - Due Date (date, required, must be in the future)
+             - Upon submission, replaces "Issue Ticket" button with an "Issued" badge.
+             ======================================================================= -->
+        <div class="modal fade" id="issueTicketModal" tabindex="-1" aria-labelledby="issueTicketModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <!-- Modal Header -->
+                    <div class="modal-header bg-primary text-white py-3">
+                        <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="issueTicketModalLabel">
+                            <i class="bi bi-file-earmark-plus-fill"></i>
+                            <span>Issue E-Challan Penalty Ticket</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body p-4">
+                        <!-- Violation Summary Banner -->
+                        <div class="p-3 bg-light rounded-3 border mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark fs-6" id="modalViolationId">Violation #--</span>
+                                <span class="badge bg-secondary font-monospace" id="modalViolationPlate">--</span>
+                            </div>
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-camera-video me-1"></i>Camera: <strong id="modalViolationCamera">--</strong>
+                            </div>
+                            <div class="small text-muted">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Infraction: <span id="modalViolationRule" class="fw-semibold text-danger">--</span>
+                            </div>
+                        </div>
+
+                        <!-- Ticket Issuance Form -->
+                        <form id="issueTicketForm" novalidate>
+                            <input type="hidden" id="issueViolationIdInput">
+
+                            <!-- Fine Amount (number, > 0) -->
+                            <div class="mb-3">
+                                <label for="issueFineAmount" class="form-label fw-semibold">
+                                    <i class="bi bi-currency-rupee text-secondary me-1"></i>Fine Amount (₹) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">₹</span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="issueFineAmount" 
+                                           min="1" 
+                                           step="50" 
+                                           required 
+                                           placeholder="e.g. 500">
+                                    <div class="invalid-feedback" id="fineAmountError">
+                                        Fine amount is required and must be greater than 0.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Due Date (must be in future) -->
+                            <div class="mb-3">
+                                <label for="issueDueDate" class="form-label fw-semibold">
+                                    <i class="bi bi-calendar-event text-secondary me-1"></i>Payment Due Date <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="issueDueDate" 
+                                       required>
+                                <div class="invalid-feedback" id="dueDateError">
+                                    Due date is required and must be set in the future.
+                                </div>
+                            </div>
+
+                            <!-- Modal Error Alert (if API fails) -->
+                            <div id="issueTicketError" class="alert alert-danger py-2 small d-none" role="alert"></div>
+
+                            <!-- Actions -->
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary px-4 fw-semibold d-flex align-items-center gap-1" id="confirmIssueBtn">
+                                    <span id="issueBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <i class="bi bi-send-check-fill" id="issueBtnIcon"></i>
+                                    <span id="issueBtnText">Issue Official Ticket</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Component -->
+    <footer class="bg-white border-top py-3 mt-auto">
+        <div class="container text-center text-muted small">
+            <span>&copy; 2026 Smart City Parking & Traffic E-Challan System &bull; Frontend DBMS Prototype</span>
+        </div>
+    </footer>
+
+    <!-- Scripts (Ordered for Vanilla JS Architecture) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Chart.js CDN for Municipal Analytics Dashboard (Step 8) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/mock-data.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

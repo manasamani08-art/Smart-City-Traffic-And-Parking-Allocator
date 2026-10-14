@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Registered Vehicles | Smart City Parking & Traffic System</title>
+
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Project Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Container for Dynamically Injected Shared Navbar (js/navbar.js) -->
+    <div id="navbarContainer"></div>
+
+    <!-- =======================================================================
+         MAIN PAGE CONTENT - MY VEHICLES
+         ======================================================================= -->
+    <main class="container my-4 my-md-5">
+
+        <!-- Page Header & Action Bar -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 small">
+                        <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">My Vehicles</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-1">
+                    <i class="bi bi-car-front-fill text-primary me-2"></i>My Registered Vehicles
+                </h1>
+                <p class="text-muted mb-0 small">
+                    Manage motor vehicles registered to your citizen profile for smart parking slots and automated challans.
+                </p>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <span id="vehicleStatsBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
+                    Loading vehicles...
+                </span>
+                <button class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm px-3 py-2" id="openAddVehicleModalBtn">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span>Add Vehicle</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Feedback Alert Banner (Add/Delete Confirmation) -->
+        <div id="vehicleActionAlert" class="alert alert-success alert-dismissible fade show d-none shadow-sm" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+                <div>
+                    <h6 class="alert-heading fw-bold mb-0" id="vehicleActionAlertTitle">Vehicle Updated</h6>
+                    <p class="mb-0 small" id="vehicleActionAlertMessage">Record successfully updated.</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="vehiclesErrorMessage" class="alert alert-danger d-none shadow-sm" role="alert"></div>
+
+        <!-- Vehicles Table Card -->
+        <div class="card card-custom shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                <h2 class="h6 mb-0 fw-semibold text-secondary text-uppercase tracking-wider">
+                    <i class="bi bi-table me-2"></i>Automobile Registry Table
+                </h2>
+                <div class="small text-muted d-flex align-items-center gap-3">
+                    <span><i class="bi bi-circle-fill text-success me-1 small"></i>Verified</span>
+                    <span><i class="bi bi-circle-fill text-warning me-1 small"></i>Unclaimed</span>
+                    <span><i class="bi bi-circle-fill text-secondary me-1 small"></i>Out of State</span>
+                </div>
+            </div>
+
+            <!-- Loading Spinner State -->
+            <div id="vehiclesLoadingSpinner" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 2.2rem; height: 2.2rem;">
+                    <span class="visually-hidden">Loading vehicles...</span>
+                </div>
+                <p class="text-muted mt-2 small">Retrieving registered vehicles from API layer...</p>
+            </div>
+
+            <!-- Responsive Table -->
+            <div class="table-responsive">
+                <table class="table table-custom table-hover align-middle mb-0" id="vehiclesTable">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 170px;">License Plate</th>
+                            <th scope="col" style="width: 160px;">Manufacturer / Make</th>
+                            <th scope="col" style="width: 160px;">Model</th>
+                            <th scope="col" style="width: 140px;">Color</th>
+                            <th scope="col" style="width: 180px;">Registration Status</th>
+                            <th scope="col" style="width: 120px;" class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <!-- Dynamically Populated by js/vehicles.js -->
+                    <tbody id="vehiclesTableBody">
+                        <!-- Vehicle rows injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Card Footer with DBMS Schema Notes -->
+            <div class="card-footer bg-light py-2 small text-muted d-flex justify-content-between">
+                <span>DBMS Entity: <code>VEHICLES(plate_no, make, model, color, registration_status, user_id)</code></span>
+                <span>Unique Primary Key: <code>plate_no</code></span>
+            </div>
+        </div>
+
+        <!-- =======================================================================
+             ADD VEHICLE MODAL (Step 7)
+             Viva Explanation:
+             Bootstrap modal dialog for registering a new citizen vehicle.
+             Fields:
+             - plate_no (required, uppercase, max 15 characters)
+             - make (required)
+             - model (required)
+             - color (required)
+             - registration_status (dropdown: Verified, Unclaimed, Out_of_State)
+             - Enforces duplicate license plate rejection before submission.
+             ======================================================================= -->
+        <div class="modal fade" id="addVehicleModal" tabindex="-1" aria-labelledby="addVehicleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <!-- Modal Header -->
+                    <div class="modal-header bg-primary text-white py-3">
+                        <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="addVehicleModalLabel">
+                            <i class="bi bi-car-front-fill"></i>
+                            <span>Register New Vehicle</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body p-4">
+                        <form id="addVehicleForm" novalidate>
+
+                            <!-- License Plate Number (uppercase, max 15) -->
+                            <div class="mb-3">
+                                <label for="vehPlateNo" class="form-label fw-semibold">
+                                    <i class="bi bi-badge-ad text-secondary me-1"></i>License Plate Number <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" 
+                                       class="form-control text-uppercase font-monospace fs-6" 
+                                       id="vehPlateNo" 
+                                       maxlength="15" 
+                                       required 
+                                       placeholder="e.g. DL-01-AB-1234">
+                                <div class="invalid-feedback" id="vehPlateError">
+                                    License plate is required (max 15 characters, uppercase).
+                                </div>
+                                <div class="form-text small">
+                                    Must be unique. Plates are stored in standard uppercase format.
+                                </div>
+                            </div>
+
+                            <!-- Make & Model Row -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-12 col-sm-6">
+                                    <label for="vehMake" class="form-label fw-semibold">
+                                        Make (Manufacturer) <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="vehMake" 
+                                           required 
+                                           placeholder="e.g. Toyota, Tata, Hyundai">
+                                    <div class="invalid-feedback">Make is required.</div>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="vehModel" class="form-label fw-semibold">
+                                        Model <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="vehModel" 
+                                           required 
+                                           placeholder="e.g. Camry, Nexon, Creta">
+                                    <div class="invalid-feedback">Model is required.</div>
+                                </div>
+                            </div>
+
+                            <!-- Color & Registration Status Row -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-12 col-sm-6">
+                                    <label for="vehColor" class="form-label fw-semibold">
+                                        Exterior Color <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="vehColor" 
+                                           required 
+                                           placeholder="e.g. Pearl White, Silver">
+                                    <div class="invalid-feedback">Color is required.</div>
+                                </div>
+                                <div class="col-12 col-sm-6">
+                                    <label for="vehRegStatus" class="form-label fw-semibold">
+                                        Registration Status <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="vehRegStatus" required>
+                                        <option value="Verified" selected>Verified</option>
+                                        <option value="Unclaimed">Unclaimed</option>
+                                        <option value="Out_of_State">Out_of_State</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please choose a valid status.</div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Error Alert (e.g. Duplicate Plate) -->
+                            <div id="modalVehicleError" class="alert alert-danger py-2 small d-none" role="alert"></div>
+
+                            <!-- Modal Footer Buttons -->
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary px-4 fw-semibold d-flex align-items-center gap-1" id="saveVehicleBtn">
+                                    <span id="saveVehSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                    <i class="bi bi-check-circle-fill" id="saveVehIcon"></i>
+                                    <span id="saveVehText">Add Vehicle</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =======================================================================
+             DELETE CONFIRMATION MODAL (Step 7)
+             ======================================================================= -->
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-danger text-white py-2">
+                        <h6 class="modal-title fw-bold d-flex align-items-center gap-1" id="deleteConfirmModalLabel">
+                            <i class="bi bi-trash3-fill"></i>
+                            <span>Confirm Deletion</span>
+                        </h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-3 text-center">
+                        <i class="bi bi-exclamation-circle text-danger display-5 d-block mb-2"></i>
+                        <p class="mb-1">Are you sure you want to remove vehicle <strong id="deleteTargetPlate">--</strong>?</p>
+                        <small class="text-muted d-block">This action will unregister the plate from your active profile.</small>
+                    </div>
+                    <div class="modal-footer p-2 justify-content-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger btn-sm px-3 fw-semibold d-flex align-items-center gap-1" id="confirmDeleteBtn">
+                            <span id="deleteSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            <span>Yes, Delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Component -->
+    <footer class="bg-white border-top py-3 mt-auto">
+        <div class="container text-center text-muted small">
+            <span>&copy; 2026 Smart City Parking & Traffic E-Challan System &bull; Frontend DBMS Prototype</span>
+        </div>
+    </footer>
+
+    <!-- Script Dependencies (Vanilla JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="js/mock-data.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/vehicles.js"></script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My E-Challan Tickets | Smart City Parking & Traffic System</title>
+
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Project Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Container for Dynamically Injected Shared Navbar (js/navbar.js) -->
+    <div id="navbarContainer"></div>
+
+    <!-- =======================================================================
+         MAIN PAGE CONTENT - TICKETS & APPEALS
+         ======================================================================= -->
+    <main class="container my-4 my-md-5">
+
+        <!-- Page Header & Action Bar -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 small">
+                        <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">E-Challans</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-1">
+                    <i class="bi bi-receipt-cutoff text-primary me-2"></i>Traffic E-Challans (My Tickets)
+                </h1>
+                <p class="text-muted mb-0 small">
+                    View issued parking and traffic violation notices, complete fine payments, or lodge formal dispute appeals.
+                </p>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span id="ticketStatsBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
+                    Loading tickets...
+                </span>
+                <button id="refreshTicketsBtn" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-sm" title="Reload data from api.js">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Feedback Alert Banner (Payment & Appeal Confirmation) -->
+        <div id="ticketActionAlert" class="alert alert-success alert-dismissible fade show d-none shadow-sm" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+                <div>
+                    <h6 class="alert-heading fw-bold mb-0" id="ticketActionAlertTitle">Action Processed</h6>
+                    <p class="mb-0 small" id="ticketActionAlertMessage">Ticket updated successfully.</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Error Message Alert -->
+        <div id="ticketsErrorMessage" class="alert alert-danger d-none shadow-sm" role="alert"></div>
+
+        <!-- Tickets Table Card -->
+        <div class="card card-custom shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <h2 class="h6 mb-0 fw-semibold text-secondary text-uppercase tracking-wider">
+                        <i class="bi bi-table me-2"></i>Issued Violations Directory
+                    </h2>
+                </div>
+                <div class="small text-muted d-flex align-items-center gap-3">
+                    <span><i class="bi bi-circle-fill text-danger me-1 small"></i>Unpaid</span>
+                    <span><i class="bi bi-circle-fill text-success me-1 small"></i>Paid</span>
+                    <span><i class="bi bi-circle-fill text-warning me-1 small"></i>Appealed</span>
+                    <span><i class="bi bi-circle-fill text-dark me-1 small"></i>Flagged</span>
+                </div>
+            </div>
+
+            <!-- Loading Spinner State -->
+            <div id="ticketsLoadingSpinner" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                    <span class="visually-hidden">Loading tickets...</span>
+                </div>
+                <p class="text-muted mt-2 small">Retrieving traffic violation records via API layer...</p>
+            </div>
+
+            <!-- Responsive Table -->
+            <div class="table-responsive">
+                <table class="table table-custom table-hover align-middle mb-0" id="ticketsTable">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 110px;">Challan ID</th>
+                            <th scope="col" style="width: 140px;">Vehicle Plate</th>
+                            <th scope="col">Violation / Rule Broken</th>
+                            <th scope="col" style="width: 160px;">Violation Time</th>
+                            <th scope="col" style="width: 150px;">Due Date</th>
+                            <th scope="col" style="width: 130px;">Fine Amount</th>
+                            <th scope="col" style="width: 130px;">Status</th>
+                            <th scope="col" style="width: 180px;" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <!-- Dynamic Rows Populated by js/tickets.js -->
+                    <tbody id="ticketsTableBody">
+                        <!-- Rows injected dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Card Footer with DBMS Schema Notes -->
+            <div class="card-footer bg-light py-2 small text-muted d-flex flex-column flex-sm-row justify-content-between">
+                <span>DBMS Entity: <code>TICKETS(ticket_id, plate_no, rule_broken, violation_time, fine_amount, issue_date, due_date, ticket_status)</code></span>
+                <span>Foreign Key: <code>plate_no &rarr; VEHICLES.plate_no</code></span>
+            </div>
+        </div>
+
+        <!-- =======================================================================
+             APPEAL MODAL COMPONENT (Step 4)
+             Viva Explanation:
+             Bootstrap modal dialog for submitting a formal traffic ticket dispute.
+             Includes:
+             - Summary of contested ticket
+             - reason_text textarea with live character counter (max 500 chars)
+             - Client-side validation ensuring reason is provided
+             ======================================================================= -->
+        <div class="modal fade" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <!-- Modal Header -->
+                    <div class="modal-header bg-warning text-dark py-3">
+                        <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="appealModalLabel">
+                            <i class="bi bi-shield-exclamation"></i>
+                            <span>Dispute Ticket Appeal</span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body p-4">
+                        <!-- Contested Ticket Summary -->
+                        <div class="p-3 bg-light rounded-3 border mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark fs-6" id="appealModalTicketId">Ticket #--</span>
+                                <span class="badge bg-danger" id="appealModalTicketStatus">Unpaid</span>
+                            </div>
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-car-front me-1"></i>Vehicle: <strong id="appealModalPlateNo">--</strong> &bull;
+                                <i class="bi bi-cash me-1"></i>Fine: <strong id="appealModalFine" class="text-danger">₹--</strong>
+                            </div>
+                            <div class="small text-muted">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Violation: <span id="appealModalViolation" class="fst-italic">--</span>
+                            </div>
+                        </div>
+
+                        <!-- Appeal Form -->
+                        <form id="appealForm" novalidate>
+                            <input type="hidden" id="appealTicketIdInput">
+
+                            <div class="mb-3">
+                                <label for="appealReasonText" class="form-label fw-semibold d-flex justify-content-between align-items-center">
+                                    <span>Reason for Dispute <span class="text-danger">*</span></span>
+                                    <!-- Live Character Counter -->
+                                    <small class="text-muted fw-normal" id="charCounterContainer">
+                                        <span id="charCount" class="fw-bold">0</span> / 500 characters
+                                    </small>
+                                </label>
+                                <textarea class="form-control" 
+                                          id="appealReasonText" 
+                                          rows="5" 
+                                          maxlength="500" 
+                                          required 
+                                          placeholder="Please explain why this e-challan should be reviewed or dismissed (e.g., incorrect vehicle, emergency circumstances, faulty sensor)..."></textarea>
+                                <div class="invalid-feedback" id="appealReasonError">
+                                    Please enter your reason for appealing this ticket (maximum 500 characters).
+                                </div>
+                            </div>
+
+                            <!-- Modal Error Alert (if API call fails) -->
+                            <div id="appealFormError" class="alert alert-danger py-2 small d-none" role="alert"></div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-warning px-4 fw-semibold d-flex align-items-center gap-1" id="submitAppealBtn">
+                                    <span id="appealBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <i class="bi bi-send-fill" id="appealBtnIcon"></i>
+                                    <span id="appealBtnText">Submit Appeal</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Component -->
+    <footer class="bg-white border-top py-3 mt-auto">
+        <div class="container text-center text-muted small">
+            <span>&copy; 2026 Smart City Parking & Traffic E-Challan System &bull; Frontend DBMS Prototype</span>
+        </div>
+    </footer>
+
+    <!-- Scripts (Ordered for Vanilla JS Architecture) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="js/mock-data.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/tickets.js"></script>
+</body>
+</html>

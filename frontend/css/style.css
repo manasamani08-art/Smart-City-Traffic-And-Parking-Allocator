@@ -1,0 +1,343 @@
+/* ==========================================================================
+   Smart City Parking & E-Challan System - Custom Stylesheet (style.css)
+   ==========================================================================
+   Purpose:
+   This file provides custom styles that complement Bootstrap 5.
+   Bootstrap handles general grid, typography, and standard components,
+   while this file customizes the visual identity of our Smart City theme.
+
+   Viva Note:
+   - External CSS separates presentation from HTML structure.
+   - We override or augment Bootstrap utility classes to maintain consistency.
+   ========================================================================== */
+
+/* Root theme variables for reusable color palette */
+:root {
+    --brand-primary: #1e3a8a;       /* Deep Navy Blue for municipal authority feel */
+    --brand-secondary: #0284c7;     /* Bright Blue for accents and highlights */
+    --brand-dark: #0f172a;          /* Dark Slate for navbar and dark headers */
+    --brand-light: #f8fafc;         /* Soft Off-White for clean page backgrounds */
+    --status-available: #10b981;    /* Emerald Green for available parking */
+    --status-occupied: #ef4444;     /* Red for occupied parking */
+    --status-maintenance: #f59e0b;  /* Amber for maintenance / warnings */
+}
+
+/* Base Body Styling */
+body {
+    background-color: var(--brand-light);
+    color: #334155;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Footer pushed to bottom */
+footer {
+    margin-top: auto;
+}
+
+/* Navbar Custom Styling */
+.navbar-custom {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-custom .navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.navbar-custom .nav-link {
+    font-weight: 500;
+    transition: color 0.2s ease-in-out;
+}
+
+.navbar-custom .nav-link.active {
+    color: #38bdf8 !important; /* Cyan highlight for current active page */
+    border-bottom: 2px solid #38bdf8;
+}
+
+/* Card Enhancements */
+.card-custom {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+}
+
+/* Table Header Custom Styling */
+.table-custom thead th {
+    background-color: #f1f5f9;
+    color: #475569;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #cbd5e1;
+    vertical-align: middle;
+}
+
+/* Table Row Hover & Spacing */
+.table-custom tbody tr {
+    transition: background-color 0.15s ease-in-out;
+}
+
+.table-custom tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.table-custom td {
+    vertical-align: middle;
+    padding: 1rem 0.75rem;
+}
+
+/* Badge Enhancements */
+.badge-rate {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.65rem;
+}
+
+.badge-capacity {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.65rem;
+}
+
+/* Parking Slot Status Indicator Badges */
+.badge-status-free {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-status-occupied {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.badge-status-reserved {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.badge-status-maintenance {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+}
+
+/* Vehicle Registration Status Badges (Step 7) */
+/* Verified = Green */
+.badge-reg-verified {
+    background-color: #d1fae5;
+    color: #047857;
+    border: 1px solid #6ee7b7;
+    font-weight: 600;
+}
+
+/* Unclaimed = Yellow */
+.badge-reg-unclaimed {
+    background-color: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+    font-weight: 600;
+}
+
+/* Out_of_State = Grey */
+.badge-reg-outofstate {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+    font-weight: 600;
+}
+
+/* E-Challan Ticket Status Badges (Step 4) */
+/* Unpaid = Red */
+.badge-status-unpaid {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    font-weight: 600;
+}
+
+/* Paid = Green */
+.badge-status-paid {
+    background-color: #d1fae5;
+    color: #047857;
+    border: 1px solid #6ee7b7;
+    font-weight: 600;
+}
+
+/* Appealed = Yellow */
+.badge-status-appealed {
+    background-color: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+    font-weight: 600;
+}
+
+/* Flagged = Dark */
+.badge-status-flagged {
+    background-color: #1e293b;
+    color: #f8fafc;
+    border: 1px solid #0f172a;
+    font-weight: 600;
+}
+
+/* Overdue Highlight Badge & Row */
+.badge-status-overdue {
+    background-color: #dc2626;
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-size: 0.72rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.row-overdue {
+    background-color: #fff1f2 !important;
+}
+
+.row-overdue td {
+    border-bottom-color: #fecdd3 !important;
+}
+
+/* Admin Appeals Decision Badges (Step 5) */
+.badge-decision-pending {
+    background-color: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+    font-weight: 600;
+}
+
+.badge-decision-approved {
+    background-color: #d1fae5;
+    color: #047857;
+    border: 1px solid #6ee7b7;
+    font-weight: 600;
+}
+
+.badge-decision-rejected {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    font-weight: 600;
+}
+
+/* Admin Ticket Status Badges */
+.badge-ticket-issued {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    font-weight: 600;
+}
+
+.badge-ticket-unissued {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+    font-weight: 600;
+}
+
+/* Camera Image Thumbnail */
+.violation-thumb {
+    width: 52px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    transition: transform 0.15s ease-in-out;
+}
+
+.violation-thumb:hover {
+    transform: scale(1.1);
+}
+
+/* Mock Mode Banner Alert */
+.mock-indicator {
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+}
+
+/* Selected Zone Row Highlight */
+.table-active-zone {
+    background-color: #f0f9ff !important;
+    border-left: 4px solid var(--brand-secondary) !important;
+}
+
+/* Slot Card Component Styling (Master-Detail View) */
+.slot-card {
+    border-radius: 0.75rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-width: 2px;
+}
+
+.slot-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+}
+
+/* Slot Status Border & Accent Colors */
+/* Free: Green */
+.slot-card.status-free {
+    border-color: #10b981;
+    background-color: #ffffff;
+}
+.slot-card.status-free .card-header {
+    background-color: #ecfdf5;
+    border-bottom: 1px solid #d1fae5;
+}
+
+/* Occupied: Red */
+.slot-card.status-occupied {
+    border-color: #ef4444;
+    background-color: #ffffff;
+}
+.slot-card.status-occupied .card-header {
+    background-color: #fef2f2;
+    border-bottom: 1px solid #fee2e2;
+}
+
+/* Reserved: Yellow */
+.slot-card.status-reserved {
+    border-color: #f59e0b;
+    background-color: #ffffff;
+}
+.slot-card.status-reserved .card-header {
+    background-color: #fffbeb;
+    border-bottom: 1px solid #fef3c7;
+}
+
+/* Maintenance: Grey */
+.slot-card.status-maintenance {
+    border-color: #6b7280;
+    background-color: #ffffff;
+}
+.slot-card.status-maintenance .card-header {
+    background-color: #f9fafb;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* Modal & Reservation Form Enhancements */
+.modal-content {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%) !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 0.25rem rgba(2, 132, 199, 0.15);
+}
+
+
